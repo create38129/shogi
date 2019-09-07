@@ -13,8 +13,8 @@ namespace UnityChan
 	[RequireComponent(typeof(CapsuleCollider))]
 	[RequireComponent(typeof(Rigidbody))]
 
-	public class UnityChanControlScriptWithRgidBody : MonoBehaviour
-	{
+	public class UnityChanControlScriptWithRgidBody : Photon.Pun.MonoBehaviourPun
+    {
 
 		public float animSpeed = 1.5f;				// アニメーション再生速度設定
 		public float lookSmoother = 3.0f;			// a smoothing setting for camera motion
@@ -68,8 +68,12 @@ namespace UnityChan
 	
 		// 以下、メイン処理.リジッドボディと絡めるので、FixedUpdate内で処理を行う.
 		void FixedUpdate ()
-		{
-			float h = Input.GetAxis ("Horizontal");				// 入力デバイスの水平軸をhで定義
+        {
+            if (!(photonView.IsMine))
+            {
+                return;
+            }
+            float h = Input.GetAxis ("Horizontal");				// 入力デバイスの水平軸をhで定義
 			float v = Input.GetAxis ("Vertical");				// 入力デバイスの垂直軸をvで定義
 			anim.SetFloat ("Speed", v);							// Animator側で設定している"Speed"パラメタにvを渡す
 			anim.SetFloat ("Direction", h); 						// Animator側で設定している"Direction"パラメタにhを渡す
