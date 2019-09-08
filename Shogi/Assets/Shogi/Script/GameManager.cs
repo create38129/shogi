@@ -24,6 +24,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject selectObject;
     [SerializeField] GameObject resultObject;
 
+	[SerializeField] GameObject winObject;
+	[SerializeField] GameObject loseObject;
+	[SerializeField] GameObject aikoObject;
+
 	private GameContext context = new GameContext();
 
     // Use this for initialization
@@ -95,6 +99,7 @@ public class GameManager : MonoBehaviour
 				this.waitObject.SetActive(false);
 				this.selectObject.SetActive(false);
 				this.resultObject.SetActive(true);
+
 				break;
 
         }
@@ -155,8 +160,10 @@ public class GameManager : MonoBehaviour
 		else
 		{
 			//ぐーちょきぱーの順で定義してるので選択した手の次があれば勝ち
-			this.context.isWin = isSelect[((int)this.context.myPlayer.selectHand + 1) % 3];
+			this.context.resultState = isSelect[((int)this.context.myPlayer.selectHand + 1) % 3] 
+				? GameContext.ResultState.Win : GameContext.ResultState.Lose;
 		}
+		ChangeState(GameContext.State.Result);
 	}
 
 	/// <summary>
@@ -166,9 +173,9 @@ public class GameManager : MonoBehaviour
 	{
 		this.context.aikoCount++;
 		this.context.myPlayer.SetSelectHand(Janken.Hand.None);
-		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() {{ "aikoCount", this.context.aikoCount }};
+		this.context.resultState = GameContext.ResultState.Aiko;
+		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() { { "hand", Janken.Hand.None }, { "aikoCount", this.context.aikoCount }};
 		PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
-		ChangeState(GameContext.State.SelectHand);
 	}
 
 

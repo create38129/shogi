@@ -15,6 +15,13 @@ public class GameContext
 		Max
 	};
 
+	public enum ResultState
+	{
+		Win,
+		Lose,
+		Aiko
+	};
+
 	public State NowState = State.Prep;
 
 	public string myPlayerName = "";
@@ -23,5 +30,5 @@ public class GameContext
 	public GamePlayer myPlayer;
 
 	public int aikoCount = 0;
-	public bool isWin = false;
+	public ResultState resultState = ResultState.Win;
 }
