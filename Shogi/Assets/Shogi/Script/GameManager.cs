@@ -4,13 +4,19 @@ using UnityEngine.UI;
 using UniRx;
 using System.Collections.Generic;
 using System.Linq;
+using Photon.Pun;
 
 public class GameManager : MonoBehaviour
 {
     [SerializeField] NetworkManager networkManager;
 
-    [SerializeField] Button buttonPlay;
-    [SerializeField] InputField nameField;
+	[SerializeField] GameObject photonObject;
+
+	[SerializeField] Button buttonPlay;
+	[SerializeField] Button buttonRock;
+	[SerializeField] Button buttonPaper;
+	[SerializeField] Button buttonScissors;
+	[SerializeField] InputField nameField;
 
     [SerializeField] GameObject prepObject;
     [SerializeField] GameObject waitObject;
@@ -26,11 +32,12 @@ public class GameManager : MonoBehaviour
         Max
     };
 
-    public State NowState = State.Prep;
+    private State NowState = State.Prep;
 
     private string myPlayerName = "";
     static readonly string playerNamePrefKey = "PlayerName";
     private List<Player> players = new List<Player>();
+	private Player myPlayer;
 
     // Use this for initialization
     void Start()
@@ -45,15 +52,27 @@ public class GameManager : MonoBehaviour
             }
         }
         this.buttonPlay.OnClickAsObservable()
-            .Subscribe(_ => { })
+            .Subscribe(_ => { this.ChangeState(State.WaitOtherPlayer); })
             .AddTo(this);
-    }
+		this.buttonRock.OnClickAsObservable()
+			.Subscribe(_ => { this.SelectMyHand(Janken.Hand.Rock); })
+			.AddTo(this);
+		this.buttonPaper.OnClickAsObservable()
+			.Subscribe(_ => { this.SelectMyHand(Janken.Hand.Paper); })
+			.AddTo(this);
+		this.buttonScissors.OnClickAsObservable()
+			.Subscribe(_ => { this.SelectMyHand(Janken.Hand.Scissors); })
+			.AddTo(this);
+	}
 
     // Update is called once per frame
     void Update()
     {
         switch (this.NowState)
         {
+			case State.WaitOtherPlayer:
+				Wait();
+				break;
             case State.SelectHand:
                 SelectHand();
                 break;
@@ -74,9 +93,17 @@ public class GameManager : MonoBehaviour
                 this.resultObject.SetActive(false);
                 break;
             case State.WaitOtherPlayer:
-                break;
+				this.prepObject.SetActive(false);
+				this.waitObject.SetActive(true);
+				this.selectObject.SetActive(false);
+				this.resultObject.SetActive(false);
+				break;
             case State.SelectHand:
-                break;
+				this.prepObject.SetActive(false);
+				this.waitObject.SetActive(false);
+				this.selectObject.SetActive(true);
+				this.resultObject.SetActive(false);
+				break;
             case State.Result:
                 break;
 
@@ -85,7 +112,11 @@ public class GameManager : MonoBehaviour
     }
 
 
-    private void SelectHand()
+	private void Wait()
+	{
+	}
+
+	private void SelectHand()
     {
         if(this.players.Any(x => x.selectHand != Janken.Hand.None))
         {
@@ -99,15 +130,21 @@ public class GameManager : MonoBehaviour
     }
 
 
+	public void SelectMyHand(Janken.Hand hand)
+	{
+		this.myPlayer.SetSelectHand(hand);
+	}
+
+
     private void StartConnect()
     {
         this.networkManager.Connect("1.0", OnJoinRoom);
     }
 
     private void OnJoinRoom()
-    {
-
-    }
+	{
+		this.myPlayer = PhotonNetwork.Instantiate(photonObject.name, new Vector3(0f, 1f, 0f), Quaternion.identity, 0).GetComponent<Player>();
+	}
 
     /// <summary>
     /// プレイヤー名設定

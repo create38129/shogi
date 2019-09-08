@@ -16,7 +16,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public System.Action onJoinRoomAction;
 
     void Start()
-    {
+    {/*
         this.Connect("1.0", ()=> {
             PhotonNetwork.Instantiate(
                 photonObject.name,
@@ -28,7 +28,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
                 GameObject.FindWithTag("MainCamera");
             mainCamera.GetComponent<ThirdPersonCamera>().enabled = true;
 
-        });
+        });*/
     }
 
     /// <summary>

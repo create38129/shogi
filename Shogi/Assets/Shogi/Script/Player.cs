@@ -5,14 +5,14 @@ using Photon.Pun;
 
 public class Player : Photon.Pun.MonoBehaviourPun , IPunObservable
 {
-    public Janken.Hand selectHand { get; private set; } = Janken.Hand.None;
+    public Janken.Hand selectHand = Janken.Hand.None;
+    private Janken.Hand sendedHand = Janken.Hand.None;	//送信済み
 	private bool isSyncing = true; // 同期フラグ
 
 
 	public void SetSelectHand(Janken.Hand hand)
     {
         selectHand = hand;
-		isSyncing = true;
 	}
 
 
@@ -22,11 +22,11 @@ public class Player : Photon.Pun.MonoBehaviourPun , IPunObservable
 	{
 		if (stream.IsWriting)
 		{
-			if (isSyncing)
+			if (selectHand != sendedHand)
 			{
 				// 自身側が生成したオブジェクトの場合送信
 				stream.SendNext(selectHand);
-				isSyncing = false;
+				sendedHand = selectHand;
 			}
 		}
 		else
