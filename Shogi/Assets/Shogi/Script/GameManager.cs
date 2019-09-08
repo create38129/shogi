@@ -113,6 +113,7 @@ public class GameManager : MonoBehaviour
 	private List<Janken.Hand> handList = new List<Janken.Hand>();
 	private void SelectHand()
 	{
+		if (this.context.myPlayer.selectHand == Janken.Hand.None) return;
 		handList.Clear();
 		foreach (var p in PhotonNetwork.PlayerList) {
 			if (!p.CustomProperties.ContainsKey("hand") || !p.CustomProperties.ContainsKey("aikoCount"))return;
@@ -164,15 +165,17 @@ public class GameManager : MonoBehaviour
 	private void Aiko()
 	{
 		this.context.aikoCount++;
+		this.context.myPlayer.SetSelectHand(Janken.Hand.None);
 		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() {{ "aikoCount", this.context.aikoCount }};
 		PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
+		ChangeState(GameContext.State.SelectHand);
 	}
 
 
 	public void SelectMyHand(Janken.Hand hand)
 	{
 		this.context.myPlayer.SetSelectHand(hand);
-		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() { { "hand", hand } };
+		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() { { "hand", hand }, { "aikoCount", this.context.aikoCount } };
 		PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
 	}
 
