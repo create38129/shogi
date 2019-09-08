@@ -23,21 +23,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject selectObject;
     [SerializeField] GameObject resultObject;
 
-    public enum State : int{
-        Prep = 0,
-        WaitOtherPlayer,
-        SelectHand,
-        Result,
-
-        Max
-    };
-
-    private State NowState = State.Prep;
-
-    private string myPlayerName = "";
-    static readonly string playerNamePrefKey = "PlayerName";
-    private List<Player> players = new List<Player>();
-	private Player myPlayer;
+	private GameContext context = new GameContext();
 
     // Use this for initialization
     void Start()
@@ -45,14 +31,14 @@ public class GameManager : MonoBehaviour
         //前回の名前を利用
         if (this.nameField != null)
         {
-            if (PlayerPrefs.HasKey(playerNamePrefKey))
+            if (PlayerPrefs.HasKey(GameContext.playerNamePrefKey))
             {
 //                this.myPlayerName = PlayerPrefs.GetString(playerNamePrefKey);
 //                nameField.text = this.myPlayerName;
             }
         }
         this.buttonPlay.OnClickAsObservable()
-            .Subscribe(_ => { this.ChangeState(State.WaitOtherPlayer); })
+            .Subscribe(_ => { this.ChangeState(GameContext.State.WaitOtherPlayer); })
             .AddTo(this);
 		this.buttonRock.OnClickAsObservable()
 			.Subscribe(_ => { this.SelectMyHand(Janken.Hand.Rock); })
@@ -68,47 +54,47 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        switch (this.NowState)
+        switch (this.context.NowState)
         {
-			case State.WaitOtherPlayer:
+			case GameContext.State.WaitOtherPlayer:
 				Wait();
 				break;
-            case State.SelectHand:
+            case GameContext.State.SelectHand:
                 SelectHand();
                 break;
-            case State.Result:
+            case GameContext.State.Result:
                 Result();
                 break;
         }
     }
 
-    private void ChangeState(State state)
+    private void ChangeState(GameContext.State state)
     {
         switch (state)
         {
-            case State.Prep:
+            case GameContext.State.Prep:
                 this.prepObject.SetActive(true);
                 this.waitObject.SetActive(false);
                 this.selectObject.SetActive(false);
                 this.resultObject.SetActive(false);
                 break;
-            case State.WaitOtherPlayer:
+            case GameContext.State.WaitOtherPlayer:
 				this.prepObject.SetActive(false);
 				this.waitObject.SetActive(true);
 				this.selectObject.SetActive(false);
 				this.resultObject.SetActive(false);
 				break;
-            case State.SelectHand:
+            case GameContext.State.SelectHand:
 				this.prepObject.SetActive(false);
 				this.waitObject.SetActive(false);
 				this.selectObject.SetActive(true);
 				this.resultObject.SetActive(false);
 				break;
-            case State.Result:
+            case GameContext.State.Result:
                 break;
 
         }
-        this.NowState = state;
+        this.context.NowState = state;
     }
 
 
@@ -118,9 +104,9 @@ public class GameManager : MonoBehaviour
 
 	private void SelectHand()
     {
-        if(this.players.Any(x => x.selectHand != Janken.Hand.None))
+        if(this.context.players.Any(x => x.selectHand != Janken.Hand.None))
         {
-            this.ChangeState(State.Result);
+            this.ChangeState(GameContext.State.Result);
         }
     }
 
@@ -132,18 +118,18 @@ public class GameManager : MonoBehaviour
 
 	public void SelectMyHand(Janken.Hand hand)
 	{
-		this.myPlayer.SetSelectHand(hand);
+		this.context.myPlayer.SetSelectHand(hand);
 	}
 
 
     private void StartConnect()
     {
-        this.networkManager.Connect("1.0", OnJoinRoom);
+        this.networkManager.Connect("1.0", OnJoinRoom, context);
     }
 
     private void OnJoinRoom()
 	{
-		this.myPlayer = PhotonNetwork.Instantiate(photonObject.name, new Vector3(0f, 1f, 0f), Quaternion.identity, 0).GetComponent<Player>();
+		this.context.myPlayer = PhotonNetwork.Instantiate(photonObject.name, new Vector3(0f, 1f, 0f), Quaternion.identity, 0).GetComponent<GamePlayer>();
 	}
 
     /// <summary>
@@ -152,8 +138,8 @@ public class GameManager : MonoBehaviour
     /// <param name="value"></param>
     public void OnSetPlayerName()
     {
-        this.myPlayerName = this.nameField.text;
-        PlayerPrefs.SetString(playerNamePrefKey, this.nameField.text);    //今回の名前をセーブ
+        this.context.myPlayerName = this.nameField.text;
+        PlayerPrefs.SetString(GameContext.playerNamePrefKey, this.nameField.text);    //今回の名前をセーブ
         Debug.Log("setname:" + this.nameField.text);
     }
 }

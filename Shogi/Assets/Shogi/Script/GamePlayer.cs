@@ -3,7 +3,7 @@ using UnityEditor;
 using Photon.Pun;
 
 
-public class Player : Photon.Pun.MonoBehaviourPun , IPunObservable
+public class GamePlayer : Photon.Pun.MonoBehaviourPun , IPunObservable
 {
     public Janken.Hand selectHand = Janken.Hand.None;
     private Janken.Hand sendedHand = Janken.Hand.None;	//送信済み
