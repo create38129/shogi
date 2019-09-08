@@ -1042,7 +1042,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2049dab702f92d24aa2b2659f6b80aad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  photonObject: {fileID: 5509471960718989013, guid: 32525fda9b599a5408c09a50fc8a234b,
+  photonObject: {fileID: 4027235946050753652, guid: 023fd194183888b4f9579c67cafe866f,
     type: 3}
   joinedMembersText: {fileID: 1527570345}
 --- !u!1 &1010937291

@@ -21,4 +21,7 @@ public class GameContext
 	public static readonly string playerNamePrefKey = "PlayerName";
 	public List<GamePlayer> players = new List<GamePlayer>();
 	public GamePlayer myPlayer;
+
+	public int aikoCount = 0;
+	public bool isWin = false;
 }

@@ -162,7 +162,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 		joinedMembersText.text = "";
 		foreach (var p in PhotonNetwork.PlayerList)
 		{
-			joinedMembersText.text += p.NickName + "\n";
+			joinedMembersText.text += p.ActorNumber + "/" + p.NickName + "\n";
 		}
 	}
 }

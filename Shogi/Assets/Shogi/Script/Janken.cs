@@ -3,14 +3,14 @@ using UnityEditor;
 
 public static class Janken
 {
-    public enum Hand
+    public enum Hand : int
     {
-        None,
+        None = -1,
         Rock,
-        Paper,
         Scissors,
+		Paper,
 
-        Max
+		Max
     };
 
     /// <summary>

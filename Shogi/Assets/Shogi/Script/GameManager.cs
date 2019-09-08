@@ -5,6 +5,7 @@ using UniRx;
 using System.Collections.Generic;
 using System.Linq;
 using Photon.Pun;
+using ExitGames.Client.Photon;
 
 public class GameManager : MonoBehaviour
 {
@@ -28,16 +29,13 @@ public class GameManager : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        //前回の名前を利用
-        if (this.nameField != null)
-        {
-            if (PlayerPrefs.HasKey(GameContext.playerNamePrefKey))
-            {
-//                this.myPlayerName = PlayerPrefs.GetString(playerNamePrefKey);
-//                nameField.text = this.myPlayerName;
-            }
-        }
-        this.buttonPlay.OnClickAsObservable()
+		//前回の名前を利用
+		if (PlayerPrefs.HasKey(GameContext.playerNamePrefKey))
+		{
+			this.context.myPlayerName = PlayerPrefs.GetString(GameContext.playerNamePrefKey);
+			nameField.text = this.context.myPlayerName;
+		}
+		this.buttonPlay.OnClickAsObservable()
             .Subscribe(_ => { this.ChangeState(GameContext.State.WaitOtherPlayer); })
             .AddTo(this);
 		this.buttonRock.OnClickAsObservable()
@@ -83,6 +81,8 @@ public class GameManager : MonoBehaviour
 				this.waitObject.SetActive(true);
 				this.selectObject.SetActive(false);
 				this.resultObject.SetActive(false);
+
+				StartConnect();
 				break;
             case GameContext.State.SelectHand:
 				this.prepObject.SetActive(false);
@@ -91,7 +91,11 @@ public class GameManager : MonoBehaviour
 				this.resultObject.SetActive(false);
 				break;
             case GameContext.State.Result:
-                break;
+				this.prepObject.SetActive(false);
+				this.waitObject.SetActive(false);
+				this.selectObject.SetActive(false);
+				this.resultObject.SetActive(true);
+				break;
 
         }
         this.context.NowState = state;
@@ -100,25 +104,76 @@ public class GameManager : MonoBehaviour
 
 	private void Wait()
 	{
+		if(PhotonNetwork.PlayerListOthers.Length > 0)
+		{
+			this.ChangeState(GameContext.State.SelectHand);
+		}
 	}
 
+	private List<Janken.Hand> handList = new List<Janken.Hand>();
 	private void SelectHand()
-    {
-        if(this.context.players.Any(x => x.selectHand != Janken.Hand.None))
-        {
-            this.ChangeState(GameContext.State.Result);
-        }
-    }
+	{
+		handList.Clear();
+		foreach (var p in PhotonNetwork.PlayerList) {
+			if (!p.CustomProperties.ContainsKey("hand") || !p.CustomProperties.ContainsKey("aikoCount"))return;
+			if ((int)p.CustomProperties["aikoCount"] != this.context.aikoCount)return;
+
+			Janken.Hand hand = (Janken.Hand)p.CustomProperties["hand"];
+			if (hand == Janken.Hand.None) return;
+
+			handList.Add(hand);
+		}
+
+		this.ChangeState(GameContext.State.Result);
+	}
 
     private void Result()
     {
 
     }
 
+	private void CheckPlayersHand()
+	{
+		bool[] isSelect = new bool[(int)Janken.Hand.Max];
+		bool isAll = true;
+		bool isOnly = true;
+		for(int i = 0; i < (int)Janken.Hand.Max; i++)
+		{
+			isSelect[i] = handList.Any(x => x == (Janken.Hand)i);
+			if(i != (int)this.context.myPlayer.selectHand)
+			{
+				isAll &= isSelect[i];
+				isOnly &= !isSelect[i];
+			}
+		}
+		if(isAll || isOnly)
+		{
+			//全種 or 同じ時
+			this.Aiko();
+		}
+		else
+		{
+			//ぐーちょきぱーの順で定義してるので選択した手の次があれば勝ち
+			this.context.isWin = isSelect[((int)this.context.myPlayer.selectHand + 1) % 3];
+		}
+	}
+
+	/// <summary>
+	/// あいこのときの処理
+	/// </summary>
+	private void Aiko()
+	{
+		this.context.aikoCount++;
+		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() {{ "aikoCount", this.context.aikoCount }};
+		PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
+	}
+
 
 	public void SelectMyHand(Janken.Hand hand)
 	{
 		this.context.myPlayer.SetSelectHand(hand);
+		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() { { "hand", hand } };
+		PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
 	}
 
 
