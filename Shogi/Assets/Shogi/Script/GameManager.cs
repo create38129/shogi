@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using UniRx;
+using System.Collections.Generic;
+using System.Linq;
 
 public class GameManager : MonoBehaviour
 {
@@ -9,17 +12,25 @@ public class GameManager : MonoBehaviour
     [SerializeField] Button buttonPlay;
     [SerializeField] InputField nameField;
 
-    public enum State {
-        Prep,
+    [SerializeField] GameObject prepObject;
+    [SerializeField] GameObject waitObject;
+    [SerializeField] GameObject selectObject;
+    [SerializeField] GameObject resultObject;
+
+    public enum State : int{
+        Prep = 0,
         WaitOtherPlayer,
-        Play,
-        Result
+        SelectHand,
+        Result,
+
+        Max
     };
 
     public State NowState = State.Prep;
 
     private string myPlayerName = "";
-    static string playerNamePrefKey = "PlayerName";
+    static readonly string playerNamePrefKey = "PlayerName";
+    private List<Player> players = new List<Player>();
 
     // Use this for initialization
     void Start()
@@ -33,10 +44,67 @@ public class GameManager : MonoBehaviour
 //                nameField.text = this.myPlayerName;
             }
         }
+        this.buttonPlay.OnClickAsObservable()
+            .Subscribe(_ => { })
+            .AddTo(this);
     }
 
     // Update is called once per frame
     void Update()
+    {
+        switch (this.NowState)
+        {
+            case State.SelectHand:
+                SelectHand();
+                break;
+            case State.Result:
+                Result();
+                break;
+        }
+    }
+
+    private void ChangeState(State state)
+    {
+        switch (state)
+        {
+            case State.Prep:
+                this.prepObject.SetActive(true);
+                this.waitObject.SetActive(false);
+                this.selectObject.SetActive(false);
+                this.resultObject.SetActive(false);
+                break;
+            case State.WaitOtherPlayer:
+                break;
+            case State.SelectHand:
+                break;
+            case State.Result:
+                break;
+
+        }
+        this.NowState = state;
+    }
+
+
+    private void SelectHand()
+    {
+        if(this.players.Any(x => x.selectHand != Janken.Hand.None))
+        {
+            this.ChangeState(State.Result);
+        }
+    }
+
+    private void Result()
+    {
+
+    }
+
+
+    private void StartConnect()
+    {
+        this.networkManager.Connect("1.0", OnJoinRoom);
+    }
+
+    private void OnJoinRoom()
     {
 
     }
