@@ -7,41 +7,66 @@ using System.Linq;
 using Photon.Pun;
 using ExitGames.Client.Photon;
 
-public class GameManager : MonoBehaviour
-{
-    [SerializeField] NetworkManager networkManager;
+public class GameManager : MonoBehaviour {
 
-	[SerializeField] GameObject photonObject;
+	[SerializeField]
+	NetworkManager networkManager;
 
-	[SerializeField] Button buttonPlay;
-	[SerializeField] Button buttonRock;
-	[SerializeField] Button buttonPaper;
-	[SerializeField] Button buttonScissors;
-	[SerializeField] InputField nameField;
+	[SerializeField]
+	GameObject photonObject;
 
-    [SerializeField] GameObject prepObject;
-    [SerializeField] GameObject waitObject;
-    [SerializeField] GameObject selectObject;
-    [SerializeField] GameObject resultObject;
+	[SerializeField]
+	Button buttonPlay;
 
-	[SerializeField] GameObject winObject;
-	[SerializeField] GameObject loseObject;
-	[SerializeField] GameObject aikoObject;
+	[SerializeField]
+	Button buttonRock;
+
+	[SerializeField]
+	Button buttonPaper;
+
+	[SerializeField]
+	Button buttonScissors;
+
+	[SerializeField]
+	InputField nameField;
+
+	[SerializeField]
+	GameObject prepObject;
+
+	[SerializeField]
+	GameObject waitObject;
+
+	[SerializeField]
+	GameObject selectObject;
+
+	[SerializeField]
+	GameObject resultObject;
+
+	[SerializeField]
+	GameObject winObject;
+
+	[SerializeField]
+	GameObject loseObject;
+	
+	[SerializeField]
+	GameObject aikoObject;
+	
+	[SerializeField]
+	Button buttonReturn;
+
 
 	private GameContext context = new GameContext();
 
-    // Use this for initialization
-    void Start()
-    {
+	// Use this for initialization
+	void Start() {
 		//前回の名前を利用
-		if (PlayerPrefs.HasKey(GameContext.playerNamePrefKey))
-		{
+		if(PlayerPrefs.HasKey(GameContext.playerNamePrefKey)) {
 			this.context.myPlayerName = PlayerPrefs.GetString(GameContext.playerNamePrefKey);
 			nameField.text = this.context.myPlayerName;
 		}
 		this.buttonPlay.OnClickAsObservable()
-            .Subscribe(_ => { this.ChangeState(GameContext.State.WaitOtherPlayer); })
-            .AddTo(this);
+			.Subscribe(_ => { this.ChangeState(GameContext.State.WaitOtherPlayer); })
+			.AddTo(this);
 		this.buttonRock.OnClickAsObservable()
 			.Subscribe(_ => { this.SelectMyHand(Janken.Hand.Rock); })
 			.AddTo(this);
@@ -51,81 +76,84 @@ public class GameManager : MonoBehaviour
 		this.buttonScissors.OnClickAsObservable()
 			.Subscribe(_ => { this.SelectMyHand(Janken.Hand.Scissors); })
 			.AddTo(this);
+		this.buttonReturn.OnClickAsObservable()
+			.Subscribe(_ => { this.ChangeState(GameContext.State.Prep); })
+			.AddTo(this);
 	}
 
-    // Update is called once per frame
-    void Update()
-    {
-        switch (this.context.NowState)
-        {
-			case GameContext.State.WaitOtherPlayer:
-				Wait();
+	// Update is called once per frame
+	void Update() {
+		switch (this.context.NowState) {
+		case GameContext.State.WaitOtherPlayer:
+			Wait();
+			break;
+		case GameContext.State.SelectHand:
+			SelectHand();
+			break;
+		case GameContext.State.Result:
+			Result();
+			break;
+		}
+	}
+
+	private void ChangeState(GameContext.State state) {
+		this.prepObject.SetActive(false);
+		this.waitObject.SetActive(false);
+		this.selectObject.SetActive(false);
+		this.resultObject.SetActive(false);
+		switch (state) {
+		case GameContext.State.Prep:
+			this.prepObject.SetActive(true);
+			break;
+		case GameContext.State.WaitOtherPlayer:
+			this.waitObject.SetActive(true);
+
+			StartConnect();
+			break;
+		case GameContext.State.SelectHand:
+			this.selectObject.SetActive(true);
+			break;
+		case GameContext.State.Result:
+			this.resultObject.SetActive(true);
+
+			this.winObject.SetActive(false);
+			this.aikoObject.SetActive(false);
+			this.loseObject.SetActive(false);
+			switch (this.context.resultState) {
+			case GameContext.ResultState.Win:
+				this.winObject.SetActive(true);
 				break;
-            case GameContext.State.SelectHand:
-                SelectHand();
-                break;
-            case GameContext.State.Result:
-                Result();
-                break;
-        }
-    }
-
-    private void ChangeState(GameContext.State state)
-    {
-        switch (state)
-        {
-            case GameContext.State.Prep:
-                this.prepObject.SetActive(true);
-                this.waitObject.SetActive(false);
-                this.selectObject.SetActive(false);
-                this.resultObject.SetActive(false);
-                break;
-            case GameContext.State.WaitOtherPlayer:
-				this.prepObject.SetActive(false);
-				this.waitObject.SetActive(true);
-				this.selectObject.SetActive(false);
-				this.resultObject.SetActive(false);
-
-				StartConnect();
+			case GameContext.ResultState.Aiko:
+				this.aikoObject.SetActive(true);
 				break;
-            case GameContext.State.SelectHand:
-				this.prepObject.SetActive(false);
-				this.waitObject.SetActive(false);
-				this.selectObject.SetActive(true);
-				this.resultObject.SetActive(false);
+			case GameContext.ResultState.Lose:
+				this.loseObject.SetActive(true);
 				break;
-            case GameContext.State.Result:
-				this.prepObject.SetActive(false);
-				this.waitObject.SetActive(false);
-				this.selectObject.SetActive(false);
-				this.resultObject.SetActive(true);
+			}
+			break;
 
-				break;
-
-        }
-        this.context.NowState = state;
-    }
+		}
+		this.context.NowState = state;
+	}
 
 
-	private void Wait()
-	{
-		if(PhotonNetwork.PlayerListOthers.Length > 0)
-		{
+	private void Wait() {
+		if(PhotonNetwork.PlayerListOthers.Length > 0) {
 			this.ChangeState(GameContext.State.SelectHand);
 		}
 	}
 
 	private List<Janken.Hand> handList = new List<Janken.Hand>();
-	private void SelectHand()
-	{
-		if (this.context.myPlayer.selectHand == Janken.Hand.None) return;
+
+	private void SelectHand() {
+		if(this.context.myPlayer.selectHand == Janken.Hand.None) return;
 		handList.Clear();
 		foreach (var p in PhotonNetwork.PlayerList) {
-			if (!p.CustomProperties.ContainsKey("hand") || !p.CustomProperties.ContainsKey("aikoCount"))return;
-			if ((int)p.CustomProperties["aikoCount"] != this.context.aikoCount)return;
+			if(!p.CustomProperties.ContainsKey("hand") || !p.CustomProperties.ContainsKey("aikoCount")) return;
+			if((int)p.CustomProperties["aikoCount"] != this.context.aikoCount) return;
 
 			Janken.Hand hand = (Janken.Hand)p.CustomProperties["hand"];
-			if (hand == Janken.Hand.None) return;
+			if(hand == Janken.Hand.None) return;
 
 			handList.Add(hand);
 		}
@@ -133,35 +161,30 @@ public class GameManager : MonoBehaviour
 		this.ChangeState(GameContext.State.Result);
 	}
 
-    private void Result()
-    {
+	private void Result() {
 
-    }
+	}
 
-	private void CheckPlayersHand()
-	{
+	private void CheckPlayersHand() {
 		bool[] isSelect = new bool[(int)Janken.Hand.Max];
 		bool isAll = true;
 		bool isOnly = true;
-		for(int i = 0; i < (int)Janken.Hand.Max; i++)
-		{
+		for (int i = 0; i < (int)Janken.Hand.Max; i++) {
 			isSelect[i] = handList.Any(x => x == (Janken.Hand)i);
-			if(i != (int)this.context.myPlayer.selectHand)
-			{
+			if(i != (int)this.context.myPlayer.selectHand) {
 				isAll &= isSelect[i];
 				isOnly &= !isSelect[i];
 			}
 		}
-		if(isAll || isOnly)
-		{
+		if(isAll || isOnly) {
 			//全種 or 同じ時
 			this.Aiko();
 		}
-		else
-		{
+		else {
 			//ぐーちょきぱーの順で定義してるので選択した手の次があれば勝ち
-			this.context.resultState = isSelect[((int)this.context.myPlayer.selectHand + 1) % 3] 
-				? GameContext.ResultState.Win : GameContext.ResultState.Lose;
+			this.context.resultState = isSelect[((int)this.context.myPlayer.selectHand + 1) % 3]
+				? GameContext.ResultState.Win
+				: GameContext.ResultState.Lose;
 		}
 		ChangeState(GameContext.State.Result);
 	}
@@ -169,42 +192,38 @@ public class GameManager : MonoBehaviour
 	/// <summary>
 	/// あいこのときの処理
 	/// </summary>
-	private void Aiko()
-	{
+	private void Aiko() {
 		this.context.aikoCount++;
 		this.context.myPlayer.SetSelectHand(Janken.Hand.None);
 		this.context.resultState = GameContext.ResultState.Aiko;
-		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() { { "hand", Janken.Hand.None }, { "aikoCount", this.context.aikoCount }};
+		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() {{"hand", Janken.Hand.None}, {"aikoCount", this.context.aikoCount}};
 		PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
 	}
 
 
-	public void SelectMyHand(Janken.Hand hand)
-	{
+	public void SelectMyHand(Janken.Hand hand) {
 		this.context.myPlayer.SetSelectHand(hand);
-		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() { { "hand", hand }, { "aikoCount", this.context.aikoCount } };
+		ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable() {{"hand", hand}, {"aikoCount", this.context.aikoCount}};
 		PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
 	}
 
 
-    private void StartConnect()
-    {
-        this.networkManager.Connect("1.0", OnJoinRoom, context);
-    }
+	private void StartConnect() {
+		this.networkManager.Connect("1.0", OnJoinRoom, context);
+	}
 
-    private void OnJoinRoom()
-	{
+	private void OnJoinRoom() {
 		this.context.myPlayer = PhotonNetwork.Instantiate(photonObject.name, new Vector3(0f, 1f, 0f), Quaternion.identity, 0).GetComponent<GamePlayer>();
 	}
 
-    /// <summary>
-    /// プレイヤー名設定
-    /// </summary>
-    /// <param name="value"></param>
-    public void OnSetPlayerName()
-    {
-        this.context.myPlayerName = this.nameField.text;
-        PlayerPrefs.SetString(GameContext.playerNamePrefKey, this.nameField.text);    //今回の名前をセーブ
-        Debug.Log("setname:" + this.nameField.text);
-    }
+	/// <summary>
+	/// プレイヤー名設定
+	/// </summary>
+	/// <param name="value"></param>
+	public void OnSetPlayerName() {
+		this.context.myPlayerName = this.nameField.text;
+		PlayerPrefs.SetString(GameContext.playerNamePrefKey, this.nameField.text); //今回の名前をセーブ
+		Debug.Log("setname:" + this.nameField.text);
+	}
+
 }
