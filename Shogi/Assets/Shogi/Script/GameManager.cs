@@ -154,6 +154,7 @@ public class GameManager : MonoBehaviour {
 
 			Janken.Hand hand = (Janken.Hand)p.CustomProperties["hand"];
 			if(hand == Janken.Hand.None) return;
+			Debug.Log(p.NickName + ":" + hand.ToString());
 
 			handList.Add(hand);
 		}
